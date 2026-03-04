@@ -1,11 +1,5 @@
-const API_BASE = window.location.port === "5173"
-  ? "http://127.0.0.1:8000"
-  : "";
-
 const authSection = document.getElementById("auth-section");
 const appSection = document.getElementById("app-section");
-const loginBtn = document.getElementById("login-btn");
-const logoutBtn = document.getElementById("logout-btn");
 const form = document.getElementById("search-form");
 const input = document.getElementById("playlist-url");
 const btn = document.getElementById("search-btn");
@@ -16,14 +10,10 @@ const tbody = document.getElementById("results-body");
 let total = 0;
 let found = 0;
 
-// Set auth links to point to backend directly
-loginBtn.href = `${API_BASE}/api/auth/login`;
-logoutBtn.href = `${API_BASE}/api/auth/logout`;
-
 // Check auth status on load
 async function checkAuth() {
   try {
-    const res = await fetch(`${API_BASE}/api/auth/status`, { credentials: "include" });
+    const res = await fetch("/api/auth/status");
     const data = await res.json();
     if (data.logged_in) {
       authSection.classList.add("hidden");
@@ -60,10 +50,7 @@ form.addEventListener("submit", (e) => {
   status.textContent = "Connecting...";
 
   const encoded = encodeURIComponent(url);
-  const source = new EventSource(
-    `${API_BASE}/api/search?playlist_url=${encoded}`,
-    { withCredentials: true }
-  );
+  const source = new EventSource(`/api/search?playlist_url=${encoded}`);
 
   source.addEventListener("total", (e) => {
     const data = JSON.parse(e.data);
