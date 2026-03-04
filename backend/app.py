@@ -55,7 +55,9 @@ async def login():
 
 
 @app.get("/api/auth/callback")
-async def callback(request: Request, code: str):
+async def callback(request: Request, code: str = None, error: str = None):
+    if error or not code:
+        return RedirectResponse(FRONTEND_URL)
     oauth = create_spotify_oauth()
     token_info = oauth.get_access_token(code)
     request.session["token_info"] = token_info
