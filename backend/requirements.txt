@@ -1,0 +1,6 @@
+spotipy
+python-dotenv
+bandcamp-search
+fastapi
+uvicorn[standard]
+sse-starlette

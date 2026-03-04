@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spotify to Bandcamp</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Spotify &rarr; Bandcamp</h1>
+
+      <div id="auth-section" class="hidden">
+        <p class="auth-msg">Connect your Spotify account to search your playlists on Bandcamp.</p>
+        <a id="login-btn" href="/api/auth/login" class="btn spotify-btn">Login with Spotify</a>
+      </div>
+
+      <div id="app-section" class="hidden">
+        <div class="header-row">
+          <form id="search-form">
+            <input
+              type="text"
+              id="playlist-url"
+              placeholder="Paste Spotify playlist URL..."
+              required
+            />
+            <button type="submit" id="search-btn">Search</button>
+          </form>
+          <a id="logout-btn" href="/api/auth/logout" class="btn logout-btn">Logout</a>
+        </div>
+        <div id="status" class="status"></div>
+        <table id="results" class="hidden">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Artist</th>
+              <th>Track</th>
+              <th>Bandcamp</th>
+            </tr>
+          </thead>
+          <tbody id="results-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+bandcamp_links.csv
+.DS_Store
+.cache
+node_modules/
+ui/dist/
