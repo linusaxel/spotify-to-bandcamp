@@ -17,7 +17,9 @@ load_dotenv()
 
 app = FastAPI()
 
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://127.0.0.1:5173")
+# In production (ui/dist exists), redirect to "/". In dev, redirect to Vite dev server.
+_static_dir = os.path.join(os.path.dirname(__file__), "..", "ui", "dist")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "/" if os.path.isdir(_static_dir) else "http://127.0.0.1:5173")
 
 app.add_middleware(
     SessionMiddleware,
