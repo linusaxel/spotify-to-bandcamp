@@ -111,8 +111,18 @@ def search_bandcamp(track_name, artist_name):
     return None
 
 
+import re
+
+SPOTIFY_PLAYLIST_RE = re.compile(
+    r"(?:https?://)?(?:open\.)?spotify\.com/playlist/([a-zA-Z0-9]+)"
+)
+
+
 def parse_playlist_id(url):
-    return url.split("/")[-1].split("?")[0]
+    match = SPOTIFY_PLAYLIST_RE.search(url)
+    if not match:
+        return None
+    return match.group(1)
 
 
 @app.get("/api/search")
@@ -121,13 +131,16 @@ async def search_playlist(request: Request, playlist_url: str):
     if not token_info:
         return JSONResponse({"error": "Not authenticated"}, status_code=401)
 
+    playlist_id = parse_playlist_id(playlist_url)
+    if not playlist_id:
+        return JSONResponse({"error": "Invalid Spotify playlist URL"}, status_code=400)
+
     oauth = create_spotify_oauth()
     if oauth.is_token_expired(token_info):
         token_info = oauth.refresh_access_token(token_info["refresh_token"])
         request.session["token_info"] = token_info
 
     sp = get_spotify_client(token_info)
-    playlist_id = parse_playlist_id(playlist_url)
 
     async def event_generator():
         tracks = get_spotify_tracks(sp, playlist_id)

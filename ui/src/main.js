@@ -45,6 +45,11 @@ form.addEventListener("submit", (e) => {
   const url = input.value.trim();
   if (!url) return;
 
+  if (!url.match(/spotify\.com\/playlist\//)) {
+    status.textContent = "Please enter a valid Spotify playlist URL.";
+    return;
+  }
+
   // Reset
   tbody.innerHTML = "";
   results.classList.remove("hidden");
