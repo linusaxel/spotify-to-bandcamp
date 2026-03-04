@@ -3,14 +3,19 @@ const appSection = document.getElementById("app-section");
 const form = document.getElementById("search-form");
 const input = document.getElementById("playlist-url");
 const btn = document.getElementById("search-btn");
-const status = document.getElementById("status");
-const results = document.getElementById("results");
+const statusEl = document.getElementById("status");
+const resultsSection = document.getElementById("results-section");
+const resultsCount = document.getElementById("results-count");
 const tbody = document.getElementById("results-body");
+const progressBar = document.getElementById("progress-bar");
+const progressFill = document.getElementById("progress-fill");
+const copyLinksBtn = document.getElementById("copy-links-btn");
 
 let total = 0;
 let found = 0;
+let source = null;
+let bandcampLinks = [];
 
-// Check auth status on load
 async function checkAuth() {
   try {
     const res = await fetch("/api/auth/status");
@@ -30,38 +35,61 @@ async function checkAuth() {
 
 checkAuth();
 
+function resetButtons() {
+  btn.disabled = false;
+  btn.textContent = "Search";
+}
+
+function showError(msg) {
+  statusEl.textContent = msg;
+  statusEl.classList.add("status-error");
+}
+
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   const url = input.value.trim();
   if (!url) return;
 
   if (!url.match(/spotify\.com\/playlist\//)) {
-    status.textContent = "Please enter a valid Spotify playlist URL.";
+    showError("Please enter a valid Spotify playlist URL.");
     return;
   }
 
   // Reset
   tbody.innerHTML = "";
-  results.classList.remove("hidden");
+  resultsSection.classList.remove("hidden");
   btn.disabled = true;
   btn.textContent = "Searching...";
   total = 0;
   found = 0;
-  status.textContent = "Connecting...";
+  bandcampLinks = [];
+  copyLinksBtn.classList.add("hidden");
+  resultsCount.textContent = "";
+  statusEl.textContent = "Connecting...";
+  statusEl.classList.remove("status-error");
+  progressBar.classList.remove("hidden");
+  progressFill.style.width = "0%";
 
   const encoded = encodeURIComponent(url);
-  const source = new EventSource(`/api/search?playlist_url=${encoded}`);
+  source = new EventSource(`/api/search?playlist_url=${encoded}`);
 
   source.addEventListener("total", (e) => {
     const data = JSON.parse(e.data);
     total = data.total;
-    status.textContent = `Found ${total} tracks. Searching Bandcamp...`;
+    statusEl.textContent = `Found ${total} tracks. Searching Bandcamp...`;
   });
 
   source.addEventListener("track", (e) => {
     const data = JSON.parse(e.data);
-    if (data.link) found++;
-    status.textContent = `Searching ${data.index}/${total}... (${found} found)`;
+    if (data.link) {
+      found++;
+      bandcampLinks.push(data.link);
+    }
+    statusEl.textContent = `Searching ${data.index} of ${total}...`;
+    resultsCount.textContent = `${found} found on Bandcamp`;
+    if (total > 0) {
+      progressFill.style.width = `${(data.index / total) * 100}%`;
+    }
 
     const row = document.createElement("tr");
     const linkCell = data.link
@@ -79,16 +107,40 @@ form.addEventListener("submit", (e) => {
 
   source.addEventListener("done", () => {
     source.close();
-    btn.disabled = false;
-    btn.textContent = "Search";
-    status.textContent = `Done! Found ${found}/${total} tracks on Bandcamp.`;
+    source = null;
+    resetButtons();
+    progressFill.style.width = "100%";
+    statusEl.textContent = `Done! ${found}/${total} tracks found on Bandcamp.`;
+    resultsCount.textContent = `${found} of ${total} found`;
+    if (bandcampLinks.length > 0) {
+      copyLinksBtn.classList.remove("hidden");
+    }
+  });
+
+  source.addEventListener("search_error", (e) => {
+    source.close();
+    source = null;
+    resetButtons();
+    const data = JSON.parse(e.data);
+    showError(data.message || "An error occurred during search.");
   });
 
   source.addEventListener("error", () => {
     source.close();
-    btn.disabled = false;
-    btn.textContent = "Search";
-    status.textContent = "Error connecting to server.";
+    source = null;
+    resetButtons();
+    showError("Error connecting to server.");
+  });
+});
+
+copyLinksBtn.addEventListener("click", () => {
+  navigator.clipboard.writeText(bandcampLinks.join("\n")).then(() => {
+    copyLinksBtn.textContent = "Copied!";
+    copyLinksBtn.classList.add("copied");
+    setTimeout(() => {
+      copyLinksBtn.textContent = "Copy all links";
+      copyLinksBtn.classList.remove("copied");
+    }, 2000);
   });
 });
 

@@ -8,38 +8,55 @@
   </head>
   <body>
     <div class="container">
-      <h1>Spotify &rarr; Bandcamp</h1>
-
       <div id="auth-section" class="hidden">
-        <p class="auth-msg">Connect your Spotify account to search your playlists on Bandcamp.</p>
-        <a id="login-btn" href="/api/auth/login" class="btn spotify-btn">Login with Spotify</a>
+        <div class="hero">
+          <h1>Spotify <span class="arrow">&rarr;</span> Bandcamp</h1>
+          <p class="tagline">Find your Spotify playlist tracks on Bandcamp</p>
+          <a id="login-btn" href="/api/auth/login" class="btn spotify-btn">Login with Spotify</a>
+        </div>
       </div>
 
       <div id="app-section" class="hidden">
-        <div class="header-row">
-          <form id="search-form">
-            <input
-              type="text"
-              id="playlist-url"
-              placeholder="Paste Spotify playlist URL..."
-              required
-            />
-            <button type="submit" id="search-btn">Search</button>
-          </form>
-          <a id="logout-btn" href="/api/auth/logout" class="btn logout-btn">Logout</a>
-        </div>
+        <header class="top-bar">
+          <h1>Spotify <span class="arrow">&rarr;</span> Bandcamp</h1>
+          <a id="logout-btn" href="/api/auth/logout" class="logout-link">Logout</a>
+        </header>
+
+        <form id="search-form" class="search-box">
+          <input
+            type="text"
+            id="playlist-url"
+            placeholder="Paste Spotify playlist URL..."
+            required
+          />
+          <button type="submit" id="search-btn">Search</button>
+        </form>
+
         <div id="status" class="status"></div>
-        <table id="results" class="hidden">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Artist</th>
-              <th>Track</th>
-              <th>Bandcamp</th>
-            </tr>
-          </thead>
-          <tbody id="results-body"></tbody>
-        </table>
+
+        <div id="progress-bar" class="progress-bar hidden">
+          <div id="progress-fill" class="progress-fill"></div>
+        </div>
+
+        <div id="results-section" class="hidden">
+          <div class="results-header">
+            <span id="results-count" class="results-count"></span>
+            <button type="button" id="copy-links-btn" class="copy-btn hidden">Copy all links</button>
+          </div>
+          <div class="table-wrap">
+            <table id="results">
+              <thead>
+                <tr>
+                  <th class="col-num">#</th>
+                  <th>Artist</th>
+                  <th>Track</th>
+                  <th>Bandcamp</th>
+                </tr>
+              </thead>
+              <tbody id="results-body"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
     <script type="module" src="/src/main.js"></script>

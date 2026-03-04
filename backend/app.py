@@ -2,6 +2,7 @@ import os
 import json
 import asyncio
 import secrets
+import logging
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from bandcamp_search.search import search, SearchType
@@ -14,6 +15,8 @@ from starlette.middleware.sessions import SessionMiddleware
 from sse_starlette.sse import EventSourceResponse
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -109,6 +112,7 @@ def search_bandcamp(track_name, artist_name):
             if r["type"] == SearchType.TRACKS:
                 return r["item_url_path"]
     except Exception:
+        logger.exception("Bandcamp search failed for: %s", query)
         return None
     return None
 
@@ -145,25 +149,37 @@ async def search_playlist(request: Request, playlist_url: str):
     sp = get_spotify_client(token_info)
 
     async def event_generator():
-        tracks = get_spotify_tracks(sp, playlist_id)
-        yield {"event": "total", "data": json.dumps({"total": len(tracks)})}
+        try:
+            tracks = get_spotify_tracks(sp, playlist_id)
+            yield {"event": "total", "data": json.dumps({"total": len(tracks)})}
 
-        for i, (track, artist) in enumerate(tracks):
-            link = search_bandcamp(track, artist)
-            yield {
-                "event": "track",
-                "data": json.dumps({
-                    "index": i + 1,
-                    "artist": artist,
-                    "track": track,
-                    "link": link,
-                }),
-            }
-            await asyncio.sleep(0.3)
+            for i, (track, artist) in enumerate(tracks):
+                link = search_bandcamp(track, artist)
+                yield {
+                    "event": "track",
+                    "data": json.dumps({
+                        "index": i + 1,
+                        "artist": artist,
+                        "track": track,
+                        "link": link,
+                    }),
+                }
+                await asyncio.sleep(0.3)
 
-        yield {"event": "done", "data": json.dumps({"message": "Search complete"})}
+            yield {"event": "done", "data": json.dumps({"message": "Search complete"})}
+        except spotipy.SpotifyException as e:
+            logger.exception("Spotify API error")
+            yield {"event": "search_error", "data": json.dumps({"message": f"Spotify error: {e.msg}"})}
+        except Exception as e:
+            logger.exception("Unexpected error during search")
+            yield {"event": "search_error", "data": json.dumps({"message": str(e)})}
 
     return EventSourceResponse(event_generator())
+
+
+@app.get("/api/health")
+async def health():
+    return JSONResponse({"status": "ok"})
 
 
 # Serve static files in production (built Vite output)
