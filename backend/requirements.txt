@@ -2,5 +2,6 @@ spotipy
 python-dotenv
 bandcamp-search
 fastapi
+itsdangerous
 uvicorn[standard]
 sse-starlette
