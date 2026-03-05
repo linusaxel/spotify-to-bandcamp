@@ -125,6 +125,17 @@ def _slugify(text):
     return re.sub(r"[^a-z0-9]+", "-", text.lower().strip()).strip("-")
 
 
+def _normalize(text):
+    """Lowercase, strip non-alphanumeric, collapse whitespace."""
+    return re.sub(r"[^a-z0-9 ]+", "", text.lower()).strip()
+
+
+def _names_match(query_name, result_name):
+    """Check if names match: one contains the other after normalization."""
+    a, b = _normalize(query_name), _normalize(result_name)
+    return a in b or b in a
+
+
 def search_beatport(track_name, artist_name):
     query = f"{artist_name} {track_name}"
     try:
@@ -148,7 +159,12 @@ def search_beatport(track_name, artist_name):
                 for t in items:
                     track_id = t.get("track_id") or t.get("id")
                     name = t.get("track_name") or t.get("name", "")
-                    if track_id and name:
+                    bp_artists = [a.get("artist_name", "") for a in t.get("artists", [])]
+                    if not track_id or not name:
+                        continue
+                    artist_ok = any(_names_match(artist_name, a) for a in bp_artists)
+                    track_ok = _names_match(track_name, name)
+                    if artist_ok and track_ok:
                         return f"https://www.beatport.com/track/{_slugify(name)}/{track_id}"
     except Exception:
         logger.exception("Beatport search failed for: %s", query)
