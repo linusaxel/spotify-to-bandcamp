@@ -1,9 +1,13 @@
 import os
+import re
 import json
 import asyncio
 import secrets
 import logging
 import spotipy
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import quote_plus
 from spotipy.oauth2 import SpotifyOAuth
 from bandcamp_search.search import search, SearchType
 from dotenv import load_dotenv
@@ -117,7 +121,40 @@ def search_bandcamp(track_name, artist_name):
     return None
 
 
-import re
+def _slugify(text):
+    return re.sub(r"[^a-z0-9]+", "-", text.lower().strip()).strip("-")
+
+
+def search_beatport(track_name, artist_name):
+    query = f"{artist_name} {track_name}"
+    try:
+        resp = requests.get(
+            f"https://www.beatport.com/search?q={quote_plus(query)}",
+            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"},
+            timeout=10,
+        )
+        soup = BeautifulSoup(resp.text, "html.parser")
+        script = soup.find("script", id="__NEXT_DATA__")
+        if not script:
+            return None
+        data = json.loads(script.string)
+        queries = data.get("props", {}).get("pageProps", {}).get("dehydratedState", {}).get("queries", [])
+        for q in queries:
+            state = q.get("state", {})
+            results = state.get("data", {})
+            tracks = results.get("tracks") if isinstance(results, dict) else None
+            if tracks:
+                items = tracks.get("data", []) if isinstance(tracks, dict) else tracks
+                for t in items:
+                    track_id = t.get("track_id") or t.get("id")
+                    name = t.get("track_name") or t.get("name", "")
+                    if track_id and name:
+                        return f"https://www.beatport.com/track/{_slugify(name)}/{track_id}"
+    except Exception:
+        logger.exception("Beatport search failed for: %s", query)
+        return None
+    return None
+
 
 SPOTIFY_PLAYLIST_RE = re.compile(
     r"(?:https?://)?(?:open\.)?spotify\.com/playlist/([a-zA-Z0-9]+)"
@@ -154,14 +191,16 @@ async def search_playlist(request: Request, playlist_url: str):
             yield {"event": "total", "data": json.dumps({"total": len(tracks)})}
 
             for i, (track, artist) in enumerate(tracks):
-                link = search_bandcamp(track, artist)
+                bandcamp_link = search_bandcamp(track, artist)
+                beatport_link = search_beatport(track, artist)
                 yield {
                     "event": "track",
                     "data": json.dumps({
                         "index": i + 1,
                         "artist": artist,
                         "track": track,
-                        "link": link,
+                        "bandcamp_link": bandcamp_link,
+                        "beatport_link": beatport_link,
                     }),
                 }
                 await asyncio.sleep(0.3)

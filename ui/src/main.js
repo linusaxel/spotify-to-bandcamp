@@ -14,7 +14,7 @@ const copyLinksBtn = document.getElementById("copy-links-btn");
 let total = 0;
 let found = 0;
 let source = null;
-let bandcampLinks = [];
+let allLinks = [];
 
 async function checkAuth() {
   try {
@@ -62,7 +62,7 @@ form.addEventListener("submit", (e) => {
   btn.textContent = "Searching...";
   total = 0;
   found = 0;
-  bandcampLinks = [];
+  allLinks = [];
   copyLinksBtn.classList.add("hidden");
   resultsCount.textContent = "";
   statusEl.textContent = "Connecting...";
@@ -76,31 +76,39 @@ form.addEventListener("submit", (e) => {
   source.addEventListener("total", (e) => {
     const data = JSON.parse(e.data);
     total = data.total;
-    statusEl.textContent = `Found ${total} tracks. Searching Bandcamp...`;
+    statusEl.textContent = `Found ${total} tracks. Searching Bandcamp & Beatport...`;
   });
 
   source.addEventListener("track", (e) => {
     const data = JSON.parse(e.data);
-    if (data.link) {
+    if (data.bandcamp_link) {
       found++;
-      bandcampLinks.push(data.link);
+      allLinks.push(data.bandcamp_link);
+    }
+    if (data.beatport_link) {
+      if (!data.bandcamp_link) found++;
+      allLinks.push(data.beatport_link);
     }
     statusEl.textContent = `Searching ${data.index} of ${total}...`;
-    resultsCount.textContent = `${found} found on Bandcamp`;
+    resultsCount.textContent = `${found} found`;
     if (total > 0) {
       progressFill.style.width = `${(data.index / total) * 100}%`;
     }
 
     const row = document.createElement("tr");
-    const linkCell = data.link
-      ? `<a href="${escapeAttr(data.link)}" target="_blank" rel="noopener">${escapeHtml(data.link)}</a>`
+    const bcCell = data.bandcamp_link
+      ? `<a href="${escapeAttr(data.bandcamp_link)}" target="_blank" rel="noopener">${escapeHtml(data.bandcamp_link)}</a>`
+      : `<span class="not-found">Not found</span>`;
+    const bpCell = data.beatport_link
+      ? `<a href="${escapeAttr(data.beatport_link)}" target="_blank" rel="noopener" class="beatport-link">${escapeHtml(data.beatport_link)}</a>`
       : `<span class="not-found">Not found</span>`;
 
     row.innerHTML = `
       <td>${data.index}</td>
       <td>${escapeHtml(data.artist)}</td>
       <td>${escapeHtml(data.track)}</td>
-      <td>${linkCell}</td>
+      <td>${bcCell}</td>
+      <td>${bpCell}</td>
     `;
     tbody.appendChild(row);
   });
@@ -110,9 +118,9 @@ form.addEventListener("submit", (e) => {
     source = null;
     resetButtons();
     progressFill.style.width = "100%";
-    statusEl.textContent = `Done! ${found}/${total} tracks found on Bandcamp.`;
+    statusEl.textContent = `Done! ${found}/${total} tracks found.`;
     resultsCount.textContent = `${found} of ${total} found`;
-    if (bandcampLinks.length > 0) {
+    if (allLinks.length > 0) {
       copyLinksBtn.classList.remove("hidden");
     }
   });
@@ -134,7 +142,7 @@ form.addEventListener("submit", (e) => {
 });
 
 copyLinksBtn.addEventListener("click", () => {
-  navigator.clipboard.writeText(bandcampLinks.join("\n")).then(() => {
+  navigator.clipboard.writeText(allLinks.join("\n")).then(() => {
     copyLinksBtn.textContent = "Copied!";
     copyLinksBtn.classList.add("copied");
     setTimeout(() => {

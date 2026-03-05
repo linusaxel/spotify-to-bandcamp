@@ -12,7 +12,7 @@ body {
 }
 
 .container {
-  max-width: 860px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
 }
@@ -270,4 +270,12 @@ a:hover {
   color: #444;
   font-style: italic;
   font-size: 0.85rem;
+}
+
+.beatport-link {
+  color: #01ff95;
+}
+
+.beatport-link:hover {
+  color: #01ff95;
 }

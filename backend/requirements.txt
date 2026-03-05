@@ -5,3 +5,5 @@ fastapi
 itsdangerous
 uvicorn[standard]
 sse-starlette
+requests
+beautifulsoup4
