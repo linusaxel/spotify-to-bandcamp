@@ -255,21 +255,22 @@ async def search_playlist(request: Request, playlist_url: str):
             yield {"event": "total", "data": json.dumps({"total": len(tracks)})}
 
             for i, (track, artist) in enumerate(tracks):
-                bandcamp_link = search_bandcamp(track, artist)
-                beatport_link = search_beatport(track, artist)
-                soundcloud_link = search_soundcloud(track, artist)
+                bc, bp, sc = await asyncio.gather(
+                    asyncio.to_thread(search_bandcamp, track, artist),
+                    asyncio.to_thread(search_beatport, track, artist),
+                    asyncio.to_thread(search_soundcloud, track, artist),
+                )
                 yield {
                     "event": "track",
                     "data": json.dumps({
                         "index": i + 1,
                         "artist": artist,
                         "track": track,
-                        "bandcamp_link": bandcamp_link,
-                        "beatport_link": beatport_link,
-                        "soundcloud_link": soundcloud_link,
+                        "bandcamp_link": bc,
+                        "beatport_link": bp,
+                        "soundcloud_link": sc,
                     }),
                 }
-                await asyncio.sleep(0.3)
 
             yield {"event": "done", "data": json.dumps({"message": "Search complete"})}
         except spotipy.SpotifyException as e:

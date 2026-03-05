@@ -98,10 +98,10 @@ form.addEventListener("submit", (e) => {
       ? `<a href="${escapeAttr(data.bandcamp_link)}" target="_blank" rel="noopener">${escapeHtml(data.bandcamp_link)}</a>`
       : notFound;
     const bpCell = data.beatport_link
-      ? `<a href="${escapeAttr(data.beatport_link)}" target="_blank" rel="noopener" class="beatport-link">${escapeHtml(data.beatport_link)}</a>`
+      ? `<a href="${escapeAttr(data.beatport_link)}" target="_blank" rel="noopener">${escapeHtml(data.beatport_link)}</a>`
       : notFound;
     const scCell = data.soundcloud_link
-      ? `<a href="${escapeAttr(data.soundcloud_link)}" target="_blank" rel="noopener" class="soundcloud-link">${escapeHtml(data.soundcloud_link)}</a>`
+      ? `<a href="${escapeAttr(data.soundcloud_link)}" target="_blank" rel="noopener">${escapeHtml(data.soundcloud_link)}</a>`
       : notFound;
 
     row.innerHTML = `
