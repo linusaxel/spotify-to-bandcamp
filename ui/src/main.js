@@ -76,19 +76,16 @@ form.addEventListener("submit", (e) => {
   source.addEventListener("total", (e) => {
     const data = JSON.parse(e.data);
     total = data.total;
-    statusEl.textContent = `Found ${total} tracks. Searching Bandcamp & Beatport...`;
+    statusEl.textContent = `Found ${total} tracks. Searching...`;
   });
 
   source.addEventListener("track", (e) => {
     const data = JSON.parse(e.data);
-    if (data.bandcamp_link) {
-      found++;
-      allLinks.push(data.bandcamp_link);
-    }
-    if (data.beatport_link) {
-      if (!data.bandcamp_link) found++;
-      allLinks.push(data.beatport_link);
-    }
+    const hasAny = data.bandcamp_link || data.beatport_link || data.soundcloud_link;
+    if (hasAny) found++;
+    if (data.bandcamp_link) allLinks.push(data.bandcamp_link);
+    if (data.beatport_link) allLinks.push(data.beatport_link);
+    if (data.soundcloud_link) allLinks.push(data.soundcloud_link);
     statusEl.textContent = `Searching ${data.index} of ${total}...`;
     resultsCount.textContent = `${found} found`;
     if (total > 0) {
@@ -96,12 +93,16 @@ form.addEventListener("submit", (e) => {
     }
 
     const row = document.createElement("tr");
+    const notFound = `<span class="not-found">Not found</span>`;
     const bcCell = data.bandcamp_link
       ? `<a href="${escapeAttr(data.bandcamp_link)}" target="_blank" rel="noopener">${escapeHtml(data.bandcamp_link)}</a>`
-      : `<span class="not-found">Not found</span>`;
+      : notFound;
     const bpCell = data.beatport_link
       ? `<a href="${escapeAttr(data.beatport_link)}" target="_blank" rel="noopener" class="beatport-link">${escapeHtml(data.beatport_link)}</a>`
-      : `<span class="not-found">Not found</span>`;
+      : notFound;
+    const scCell = data.soundcloud_link
+      ? `<a href="${escapeAttr(data.soundcloud_link)}" target="_blank" rel="noopener" class="soundcloud-link">${escapeHtml(data.soundcloud_link)}</a>`
+      : notFound;
 
     row.innerHTML = `
       <td>${data.index}</td>
@@ -109,6 +110,7 @@ form.addEventListener("submit", (e) => {
       <td>${escapeHtml(data.track)}</td>
       <td>${bcCell}</td>
       <td>${bpCell}</td>
+      <td>${scCell}</td>
     `;
     tbody.appendChild(row);
   });

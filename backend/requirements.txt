@@ -7,3 +7,4 @@ uvicorn[standard]
 sse-starlette
 requests
 beautifulsoup4
+soundcloud-v2

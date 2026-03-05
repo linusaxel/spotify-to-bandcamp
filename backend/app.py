@@ -9,6 +9,7 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import quote_plus
 from spotipy.oauth2 import SpotifyOAuth
+from soundcloud import SoundCloud
 from bandcamp_search.search import search, SearchType
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
@@ -130,10 +131,19 @@ def _normalize(text):
     return re.sub(r"[^a-z0-9 ]+", "", text.lower()).strip()
 
 
+def _compact(text):
+    """Lowercase, strip everything non-alphanumeric (no spaces)."""
+    return re.sub(r"[^a-z0-9]+", "", text.lower())
+
+
 def _names_match(query_name, result_name):
-    """Check if names match: one contains the other after normalization."""
+    """Check if names match: substring match or compact match (ignoring spaces/punctuation)."""
     a, b = _normalize(query_name), _normalize(result_name)
-    return a in b or b in a
+    if a in b or b in a:
+        return True
+    # Also try without spaces (e.g. "Aphex Twin" vs "aphextwin")
+    ac, bc = _compact(query_name), _compact(result_name)
+    return ac in bc or bc in ac
 
 
 def search_beatport(track_name, artist_name):
@@ -170,6 +180,44 @@ def search_beatport(track_name, artist_name):
         logger.exception("Beatport search failed for: %s", query)
         return None
     return None
+
+
+_sc_client = SoundCloud()
+
+
+def search_soundcloud(track_name, artist_name):
+    query = f"{artist_name} {track_name}"
+    try:
+        results = _sc_client.search_tracks(query)
+        fallback = None
+        for t in results:
+            title = t.title or ""
+            user = t.user.username or "" if t.user else ""
+            if not t.permalink_url:
+                continue
+            track_ok = _names_match(track_name, title)
+            if not track_ok:
+                continue
+            artist_in_user = _names_match(artist_name, user)
+            artist_in_title = _names_match(artist_name, title)
+            if not artist_in_user and not artist_in_title:
+                continue
+            # Skip remixes/edits/reworks unless the original is that
+            title_lower = title.lower()
+            is_remix = any(tag in title_lower for tag in ("remix", "edit", "rework", "bootleg", "retake", "cut"))
+            if is_remix and not any(tag in track_name.lower() for tag in ("remix", "edit", "rework")):
+                if not fallback:
+                    fallback = t.permalink_url
+                continue
+            # Prefer official uploads (username matches artist)
+            if artist_in_user:
+                return t.permalink_url
+            if not fallback:
+                fallback = t.permalink_url
+        return fallback
+    except Exception:
+        logger.exception("SoundCloud search failed for: %s", query)
+        return None
 
 
 SPOTIFY_PLAYLIST_RE = re.compile(
@@ -209,6 +257,7 @@ async def search_playlist(request: Request, playlist_url: str):
             for i, (track, artist) in enumerate(tracks):
                 bandcamp_link = search_bandcamp(track, artist)
                 beatport_link = search_beatport(track, artist)
+                soundcloud_link = search_soundcloud(track, artist)
                 yield {
                     "event": "track",
                     "data": json.dumps({
@@ -217,6 +266,7 @@ async def search_playlist(request: Request, playlist_url: str):
                         "track": track,
                         "bandcamp_link": bandcamp_link,
                         "beatport_link": beatport_link,
+                        "soundcloud_link": soundcloud_link,
                     }),
                 }
                 await asyncio.sleep(0.3)
