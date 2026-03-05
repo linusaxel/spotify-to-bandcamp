@@ -190,7 +190,9 @@ def search_soundcloud(track_name, artist_name):
     try:
         results = _sc_client.search_tracks(query)
         fallback = None
-        for t in results:
+        for checked, t in enumerate(results):
+            if checked >= 20:
+                break
             title = t.title or ""
             user = t.user.username or "" if t.user else ""
             if not t.permalink_url:
