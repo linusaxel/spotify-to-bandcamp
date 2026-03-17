@@ -128,13 +128,12 @@ form.addEventListener("submit", (e) => {
     if (allLinks.length > 0) {
       copyLinksBtn.classList.remove("hidden");
     }
-    for (const [src, links] of Object.entries(linksBySource)) {
-      const btn = document.getElementById(`open-all-${src}`);
-      if (btn && links.length > 0) {
-        btn.textContent = `Open all ${links.length} ${src.charAt(0).toUpperCase() + src.slice(1)} tabs`;
+    document.querySelectorAll(".open-all-btn").forEach((btn) => {
+      const src = btn.dataset.source;
+      if (linksBySource[src] && linksBySource[src].length > 0) {
         btn.classList.remove("hidden");
       }
-    }
+    });
   });
 
   source.addEventListener("search_error", (e) => {
