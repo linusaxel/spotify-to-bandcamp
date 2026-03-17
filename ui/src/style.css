@@ -174,8 +174,13 @@ body {
 .results-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
   margin-bottom: 0.75rem;
+}
+
+.results-header .results-count {
+  margin-right: auto;
 }
 
 .results-count {

@@ -15,6 +15,7 @@ let total = 0;
 let found = 0;
 let source = null;
 let allLinks = [];
+let linksBySource = { bandcamp: [], beatport: [], soundcloud: [] };
 
 async function checkAuth() {
   try {
@@ -63,7 +64,9 @@ form.addEventListener("submit", (e) => {
   total = 0;
   found = 0;
   allLinks = [];
+  linksBySource = { bandcamp: [], beatport: [], soundcloud: [] };
   copyLinksBtn.classList.add("hidden");
+  document.querySelectorAll(".open-all-btn").forEach((b) => b.classList.add("hidden"));
   resultsCount.textContent = "";
   statusEl.textContent = "Connecting...";
   statusEl.classList.remove("status-error");
@@ -83,9 +86,9 @@ form.addEventListener("submit", (e) => {
     const data = JSON.parse(e.data);
     const hasAny = data.bandcamp_link || data.beatport_link || data.soundcloud_link;
     if (hasAny) found++;
-    if (data.bandcamp_link) allLinks.push(data.bandcamp_link);
-    if (data.beatport_link) allLinks.push(data.beatport_link);
-    if (data.soundcloud_link) allLinks.push(data.soundcloud_link);
+    if (data.bandcamp_link) { allLinks.push(data.bandcamp_link); linksBySource.bandcamp.push(data.bandcamp_link); }
+    if (data.beatport_link) { allLinks.push(data.beatport_link); linksBySource.beatport.push(data.beatport_link); }
+    if (data.soundcloud_link) { allLinks.push(data.soundcloud_link); linksBySource.soundcloud.push(data.soundcloud_link); }
     statusEl.textContent = `Searching ${data.index} of ${total}...`;
     resultsCount.textContent = `${found} found`;
     if (total > 0) {
@@ -125,6 +128,13 @@ form.addEventListener("submit", (e) => {
     if (allLinks.length > 0) {
       copyLinksBtn.classList.remove("hidden");
     }
+    for (const [src, links] of Object.entries(linksBySource)) {
+      const btn = document.getElementById(`open-all-${src}`);
+      if (btn && links.length > 0) {
+        btn.textContent = `Open all ${links.length} ${src.charAt(0).toUpperCase() + src.slice(1)} tabs`;
+        btn.classList.remove("hidden");
+      }
+    }
   });
 
   source.addEventListener("search_error", (e) => {
@@ -151,6 +161,14 @@ copyLinksBtn.addEventListener("click", () => {
       copyLinksBtn.textContent = "Copy all links";
       copyLinksBtn.classList.remove("copied");
     }, 2000);
+  });
+});
+
+document.querySelectorAll(".open-all-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const src = btn.dataset.source;
+    const links = linksBySource[src] || [];
+    links.forEach((link) => window.open(link, "_blank"));
   });
 });
 
