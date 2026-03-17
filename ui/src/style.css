@@ -186,27 +186,6 @@ body {
   font-weight: 600;
 }
 
-.copy-btn {
-  background: none;
-  border: 1px solid #333;
-  border-radius: 6px;
-  color: #999;
-  font-size: 0.8rem;
-  padding: 0.35rem 0.75rem;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.copy-btn:hover {
-  border-color: #1db954;
-  color: #1db954;
-}
-
-.copy-btn.copied {
-  border-color: #1db954;
-  color: #1db954;
-}
-
 .table-wrap {
   background: #111;
   border: 1px solid #1a1a1a;

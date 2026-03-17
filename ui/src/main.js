@@ -9,12 +9,10 @@ const resultsCount = document.getElementById("results-count");
 const tbody = document.getElementById("results-body");
 const progressBar = document.getElementById("progress-bar");
 const progressFill = document.getElementById("progress-fill");
-const copyLinksBtn = document.getElementById("copy-links-btn");
 
 let total = 0;
 let found = 0;
 let source = null;
-let allLinks = [];
 let linksBySource = { bandcamp: [], beatport: [], soundcloud: [] };
 
 async function checkAuth() {
@@ -63,9 +61,7 @@ form.addEventListener("submit", (e) => {
   btn.textContent = "Searching...";
   total = 0;
   found = 0;
-  allLinks = [];
   linksBySource = { bandcamp: [], beatport: [], soundcloud: [] };
-  copyLinksBtn.classList.add("hidden");
   document.querySelectorAll(".open-all-btn").forEach((b) => b.classList.add("hidden"));
   resultsCount.textContent = "";
   statusEl.textContent = "Connecting...";
@@ -86,9 +82,9 @@ form.addEventListener("submit", (e) => {
     const data = JSON.parse(e.data);
     const hasAny = data.bandcamp_link || data.beatport_link || data.soundcloud_link;
     if (hasAny) found++;
-    if (data.bandcamp_link) { allLinks.push(data.bandcamp_link); linksBySource.bandcamp.push(data.bandcamp_link); }
-    if (data.beatport_link) { allLinks.push(data.beatport_link); linksBySource.beatport.push(data.beatport_link); }
-    if (data.soundcloud_link) { allLinks.push(data.soundcloud_link); linksBySource.soundcloud.push(data.soundcloud_link); }
+    if (data.bandcamp_link) linksBySource.bandcamp.push(data.bandcamp_link);
+    if (data.beatport_link) linksBySource.beatport.push(data.beatport_link);
+    if (data.soundcloud_link) linksBySource.soundcloud.push(data.soundcloud_link);
     statusEl.textContent = `Searching ${data.index} of ${total}...`;
     resultsCount.textContent = `${found} found`;
     if (total > 0) {
@@ -125,9 +121,6 @@ form.addEventListener("submit", (e) => {
     progressFill.style.width = "100%";
     statusEl.textContent = `Done! ${found}/${total} tracks found.`;
     resultsCount.textContent = `${found} of ${total} found`;
-    if (allLinks.length > 0) {
-      copyLinksBtn.classList.remove("hidden");
-    }
     document.querySelectorAll(".open-all-btn").forEach((btn) => {
       const src = btn.dataset.source;
       if (linksBySource[src] && linksBySource[src].length > 0) {
@@ -152,30 +145,11 @@ form.addEventListener("submit", (e) => {
   });
 });
 
-copyLinksBtn.addEventListener("click", () => {
-  navigator.clipboard.writeText(allLinks.join("\n")).then(() => {
-    copyLinksBtn.textContent = "Copied!";
-    copyLinksBtn.classList.add("copied");
-    setTimeout(() => {
-      copyLinksBtn.textContent = "Copy all links";
-      copyLinksBtn.classList.remove("copied");
-    }, 2000);
-  });
-});
-
 document.querySelectorAll(".open-all-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
     const src = btn.dataset.source;
     const links = linksBySource[src] || [];
-    links.forEach((link) => {
-      const a = document.createElement("a");
-      a.href = link;
-      a.target = "_blank";
-      a.rel = "noopener";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    });
+    links.forEach((link) => window.open(link, "_blank"));
   });
 });
 
