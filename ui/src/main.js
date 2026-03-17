@@ -149,7 +149,18 @@ document.querySelectorAll(".open-all-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
     const src = btn.dataset.source;
     const links = linksBySource[src] || [];
-    links.forEach((link) => window.open(link, "_blank"));
+    let blocked = false;
+    for (const link of links) {
+      const w = window.open(link, "_blank");
+      if (!w || w.closed) {
+        blocked = true;
+        break;
+      }
+    }
+    if (blocked) {
+      statusEl.textContent = "Popups blocked — please allow popups for this site, then try again.";
+      statusEl.classList.add("status-error");
+    }
   });
 });
 
