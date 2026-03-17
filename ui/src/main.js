@@ -167,7 +167,15 @@ document.querySelectorAll(".open-all-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
     const src = btn.dataset.source;
     const links = linksBySource[src] || [];
-    links.forEach((link) => window.open(link, "_blank"));
+    links.forEach((link) => {
+      const a = document.createElement("a");
+      a.href = link;
+      a.target = "_blank";
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    });
   });
 });
 
